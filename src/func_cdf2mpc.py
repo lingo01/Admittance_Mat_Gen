@@ -225,12 +225,20 @@ def func_cdf2mpc(cdf_file_name=None, mpc_name=None, verbose=None, cdf_content=No
                 if bus_row[BUS_TYPE] == 0:  # bus type
                     bus_row[BUS_TYPE] = 1
                 
-                if bus_row[BUS_TYPE] < 2:  # Pd
-                    bus_row[PD] = __str2num(line[40:49]) - __str2num(line[58:67])
-                elif bus_row[BUS_TYPE] >= 2:
-                    bus_row[PD] = __str2num(line[40:49])
-                
-                bus_row[QD] = __str2num(line[49:58])  # Qd
+                Pload = __str2num(line[40:49])
+                Qload = __str2num(line[49:58])
+                Pg = __str2num(line[58:67])
+                Qg = __str2num(line[67:75])
+
+                if bus_row[BUS_TYPE] < 2:
+                    # MATPOWER has no explicit gen row for a CDF PQ bus, so
+                    # preserve its fixed generation as an equivalent net load.
+                    bus_row[PD] = Pload - Pg
+                    bus_row[QD] = Qload - Qg
+                else:
+                    bus_row[PD] = Pload
+                    bus_row[QD] = Qload
+
                 bus_row[GS] = baseMVA * __str2num(line[106:114])  # Gs
                 bus_row[BS] = baseMVA * __str2num(line[114:122])  # Bs
                 bus_row[BUS_AREA] = __str2num(line[18:20])  # area
@@ -244,8 +252,6 @@ def func_cdf2mpc(cdf_file_name=None, mpc_name=None, verbose=None, cdf_content=No
                 bus.append(bus_row)
 
                 # feed gen and gencost
-                Pg = __str2num(line[58:67])
-                Qg = __str2num(line[67:75])
                 Qmax = __str2num(line[90:98])
                 Qmin = __str2num(line[98:106])
                 
